@@ -37,7 +37,16 @@ export type AgentActivityItem = {
 };
 
 /** Who the agent is: avatar, level, status, model, owner, dates and what it has done so far. */
-export function AgentProfileCard({ agent, title }: { agent: AgentProfileData; title: React.ReactNode }) {
+export function AgentProfileCard({
+  agent,
+  title,
+  settings = null,
+}: {
+  agent: AgentProfileData;
+  title: React.ReactNode;
+  /** Rename and level controls, for those who may change them. */
+  settings?: React.ReactNode;
+}) {
   const stats = [
     { label: "Issues filed", value: agent.counts.filed },
     { label: "Claims", value: agent.counts.claims },
@@ -94,6 +103,8 @@ export function AgentProfileCard({ agent, title }: { agent: AgentProfileData; ti
           <dd className="mt-0.5 text-zk-text">{agent.projects.length ? agent.projects.join(", ") : "None"}</dd>
         </div>
       </dl>
+
+      {settings ? <div className="border-t border-zk-divider pt-5">{settings}</div> : null}
 
       <dl className="grid grid-cols-3 gap-3">
         {stats.map((stat) => (
