@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import type { AgentLevel } from "@prisma/client";
 import { AGENT_LEVEL_LABELS } from "@/lib/agents/levels";
 import { LocalTime } from "@/components/local-time";
@@ -12,7 +11,6 @@ import type { AgentProjectChoice } from "./create-agent-form";
 import {
   agentAvatarColor,
   agentInitials,
-  agentsLink,
   agentsMutedClass,
   agentsSurface,
   levelBadgeClass,
@@ -182,9 +180,6 @@ export function ManageAgentsList({
                           </>
                         )}
                       </p>
-                      <Link href={`/settings/agents/${agent.id}/messages`} className={`text-xs ${agentsLink}`}>
-                        Messages and instructions
-                      </Link>
                       {!agent.revokedAt ? (
                         <div className="space-y-1.5 pt-1">
                           {agent.apiKeys.map((key) => (
