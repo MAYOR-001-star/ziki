@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 const requireUser = vi.hoisted(() => vi.fn());
@@ -31,6 +31,11 @@ const callback = (query: string) => new NextRequest(`http://localhost/projects/g
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // Redirects follow the request's origin here; a configured URL from the
+  // environment (CI sets AUTH_URL / NEXTAUTH_URL) would override it by design.
+  vi.stubEnv("AUTH_URL", "");
+  vi.stubEnv("NEXTAUTH_URL", "");
+  vi.stubEnv("NEXT_PUBLIC_SITE_URL", "");
   requireUser.mockResolvedValue({ id: "user-1", role: "user" });
   currentTenantIdFor.mockResolvedValue("tenant-1");
   isTenantAdmin.mockResolvedValue(true);
@@ -39,6 +44,10 @@ beforeEach(() => {
   transaction.mockImplementation((work: (tx: unknown) => Promise<unknown>) =>
     work({ project: { update }, projectRepository: { update: repositoryUpdate }, projectAuditEvent: { create: audit } }),
   );
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
 });
 
 describe("GitHub App project callback (#608)", () => {

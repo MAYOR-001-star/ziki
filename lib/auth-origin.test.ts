@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { isValidHostHeader, resolveAuthOrigin, getRequestOrigin } from "./auth-origin";
 
 describe("resolveAuthOrigin with a configured URL (production)", () => {
@@ -101,6 +101,17 @@ describe("isValidHostHeader", () => {
 });
 
 describe("getRequestOrigin", () => {
+  // These cases cover the request-based path, so no configured URL may leak in from
+  // the environment (CI sets AUTH_URL / NEXTAUTH_URL, which would win by design).
+  beforeEach(() => {
+    vi.stubEnv("AUTH_URL", "");
+    vi.stubEnv("NEXTAUTH_URL", "");
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "");
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it("resolves from forwarded headers behind a reverse proxy", () => {
     const headers = new Headers({
       "x-forwarded-host": "ziki.dev",
