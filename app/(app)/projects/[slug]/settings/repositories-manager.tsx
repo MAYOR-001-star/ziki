@@ -94,10 +94,13 @@ function RepositoryRow({
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <form action={`/projects/${encodeURIComponent(projectSlug)}/settings/github`} method="get">
-          <input type="hidden" name="repository" value={repository.id} />
-          <Button type="submit" variant="secondary">{repository.githubInstallationId ? "Change installation" : "Connect its own installation"}</Button>
-        </form>
+        {/* A direct link, like the project's Connect GitHub App button (#194). */}
+        <a
+          href={`/projects/${encodeURIComponent(projectSlug)}/settings/github?repository=${encodeURIComponent(repository.id)}`}
+          className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-card px-3.5 py-2 text-sm font-medium text-slate-800 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"
+        >
+          {repository.githubInstallationId ? "Change installation" : "Connect its own installation"}
+        </a>
         <Button type="button" variant="danger-secondary" disabled={removing} onClick={remove}>
           {removing ? "Removing…" : "Remove"}
         </Button>

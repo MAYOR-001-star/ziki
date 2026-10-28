@@ -4,7 +4,6 @@ import { requireUser } from "@/lib/auth-helpers";
 import { currentTenantIdFor } from "@/lib/tenant-context";
 import { isTenantAdmin } from "@/lib/agents/membership";
 import { prisma } from "@/lib/prisma";
-import { Button } from "@/components/ui/button";
 import { ProjectSettingsForm } from "./settings-form";
 import { ProjectAreasManager } from "./areas-manager";
 import { ProjectRepositoriesManager } from "./repositories-manager";
@@ -86,9 +85,14 @@ export default async function ProjectSettingsPage({
         <div className="border-t border-zk-border pt-5">
           <h2 className="text-base font-semibold text-zk-text">GitHub App</h2>
           <p className="mt-1 text-sm text-zk-text2">For the main repository, and the others in the same organization. Installation ID: {project.githubInstallationId ?? "Not connected"}. No access token is stored.</p>
-          <form action={`/projects/${encodeURIComponent(project.slug)}/settings/github`} method="get" className="mt-3">
-            <Button type="submit">{project.githubInstallationId ? "Change installation" : "Connect GitHub App"}</Button>
-          </form>
+          <div className="mt-3">
+            <a
+              href={`/projects/${encodeURIComponent(project.slug)}/settings/github`}
+              className="inline-flex items-center justify-center rounded-full bg-teal-700 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-teal-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2"
+            >
+              {project.githubInstallationId ? "Change installation" : "Connect GitHub App"}
+            </a>
+          </div>
         </div>
         <ProjectRepositoriesManager
           projectSlug={project.slug}
