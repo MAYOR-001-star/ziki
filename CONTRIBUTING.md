@@ -2,13 +2,13 @@
 
 Team **Zendor (Zedu-Endor)** — lead: [@Goodnessmbakara](https://github.com/Goodnessmbakara).
 
-This is Team Zendor's **Task 1** **Ziki Issues** project (HNG15) — `Zedu-Endor/issue-tracker`, a fork of [`emerjent/bug-tracker`](https://github.com/emerjent/bug-tracker) (formerly `zeduchat/bug-tracker`). It is **not** part of `zedu-fe`, `zedu-mobile`, or `zedu-desktop`. All PRs target **this** repository's `main`.
+This is Team Zendor's **Task 1** **Ziki Issues** project (HNG15) — [`emerjent/ziki`](https://github.com/emerjent/ziki) (formerly `emerjent/bug-tracker`, and before that `zeduchat/bug-tracker`). Contribute to it directly; the `Zedu-Endor/issue-tracker` fork is no longer used for pull requests. It is **not** part of `zedu-fe`, `zedu-mobile`, or `zedu-desktop`. All PRs target **this** repository's `main`.
 
 ## Default branch
 
 - Default branch: **`main`**
 - Always branch from an up-to-date `main`
-- Open PRs against `main` in `Zedu-Endor/issue-tracker` — never against `zedu-hng` or other Zedu product repos
+- Open PRs against `main` in `emerjent/ziki` — never against `zedu-hng` or other Zedu product repos
 
 ## Branch naming
 
@@ -49,7 +49,7 @@ Keep the subject imperative and under ~72 characters. One logical change per com
 
 1. One logical change per PR — keep diffs reviewable
 2. Fill in the PR template (Summary + Test plan)
-3. Target **`main`** on `Zedu-Endor/issue-tracker`
+3. Target **`main`** on `emerjent/ziki`
 4. Do not mix unrelated refactors with feature work
 5. Never force-push (`git push --force`, `-f`, or `--force-with-lease`)
 6. Do not commit secrets (`.env`, keys, credentials)
@@ -119,7 +119,7 @@ When contributing as or alongside autonomous agents:
 ## Continuous Deployment Flow
 
 - **Production (Coolify)**:
-  The upstream repository `emerjent/bug-tracker` (formerly `zeduchat/bug-tracker`) deploys to production on Coolify (`ziki.dev`, formerly `issues.zedu.chat`). Only verified and peer-reviewed PRs from team branches are submitted upstream.
+  The repository `emerjent/ziki` (formerly `emerjent/bug-tracker`, and before that `zeduchat/bug-tracker`) deploys to production on Coolify (`ziki.dev`, formerly `issues.zedu.chat`). Only verified and peer-reviewed PRs from team branches are submitted upstream.
 
 ## Local development
 

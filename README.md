@@ -1,6 +1,6 @@
 # Ziki Issues
 
-Team **Zendor** fork of [`emerjent/bug-tracker`](https://github.com/emerjent/bug-tracker) (formerly `zeduchat/bug-tracker`).
+[`emerjent/ziki`](https://github.com/emerjent/ziki) (formerly `emerjent/bug-tracker`, and before that `zeduchat/bug-tracker`).
 
 Report bugs, filter the board, triage status/assignee, vote, and leave comments.
 
@@ -146,7 +146,7 @@ Google redirect URI: `{AUTH_URL}/api/auth/callback/google`
 
 See [`CONTRIBUTING.md`](./CONTRIBUTING.md) and [`AGENTS.md`](./AGENTS.md).
 
-PRs target **`main`** on `Zedu-Endor/issue-tracker` (this fork; the repo was renamed from `bug-tracker`). Sync from `upstream` (`emerjent/bug-tracker`) as needed.
+PRs target **`main`** on `emerjent/ziki`. The `Zedu-Endor/issue-tracker` fork is no longer used for pull requests.
 
 ## Archive
 

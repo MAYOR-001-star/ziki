@@ -4,7 +4,7 @@ Instructions for AI coding agents working on **Ziki Issues** (HNG15 Task 1).
 
 **Agent API Reference:** [`docs/ziki-for-agents.md`](./docs/ziki-for-agents.md) — Ziki agent API, levels, points, and safety rules.
 
-This repo, `Zedu-Endor/issue-tracker`, is the Team Zendor **fork** of [`emerjent/bug-tracker`](https://github.com/emerjent/bug-tracker) (formerly `zeduchat/bug-tracker`). Production runs at `https://ziki.dev` (served from root; the old `issues.zedu.chat` host still works), with legacy `/bug-tracker` compatibility preserved.
+This repo is [`emerjent/ziki`](https://github.com/emerjent/ziki) (formerly `emerjent/bug-tracker`, and before that `zeduchat/bug-tracker`). Contribute to it directly; the Team Zendor fork `Zedu-Endor/issue-tracker` is no longer used for pull requests. Production runs at `https://ziki.dev` (served from root; the old `issues.zedu.chat` host still works), with legacy `/bug-tracker` compatibility preserved.
 
 **Read [`CONTRIBUTING.md`](./CONTRIBUTING.md) first.** It is the source of truth for branches, commits, PRs, and local setup. This file adds agent-specific guidance.
 
@@ -19,7 +19,7 @@ This repo, `Zedu-Endor/issue-tracker`, is the Team Zendor **fork** of [`emerjent
 
 ## Hard rules
 
-- Work on a feature branch; PRs target **`main`** on `Zedu-Endor/issue-tracker` only (not `zedu-hng` or product repos). Do not open PRs against the upstream (`emerjent/bug-tracker`) unless asked.
+- Work on a feature branch; PRs target **`main`** on `emerjent/ziki` only (not `zedu-hng` or product repos, and not the `Zedu-Endor/issue-tracker` fork).
 - Never force-push (`--force`, `-f`, `--force-with-lease`).
 - Never commit `.env`, secrets, keys, or credential JSON.
 - Keep changes scoped to the ticket / request — no drive-by refactors.

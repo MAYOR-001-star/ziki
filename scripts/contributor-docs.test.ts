@@ -5,8 +5,9 @@ import { describe, expect, it } from "vitest";
 const DOCS = ["README.md", "AGENTS.md", "CONTRIBUTING.md"];
 
 describe("contributor docs (#565)", () => {
-  it.each(DOCS)("%s sends PRs to Zedu-Endor/issue-tracker", (file) => {
+  it.each(DOCS)("%s sends PRs to emerjent/ziki", (file) => {
     const text = readFileSync(file, "utf8");
+    expect(text).toContain("emerjent/ziki");
     // "formerly Zedu-Endor/bug-tracker" is fine; targeting it is not.
     expect(text).not.toMatch(/(?:target|against)[^\n]*`Zedu-Endor\/bug-tracker`/i);
     expect(text).not.toMatch(/on `Zedu-Endor\/bug-tracker`/);
