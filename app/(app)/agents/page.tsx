@@ -80,6 +80,7 @@ export default async function AgentsPage() {
         select: {
           id: true,
           name: true,
+          avatar: true,
           model: true,
           level: true,
           burst: true,
@@ -112,6 +113,7 @@ export default async function AgentsPage() {
     return {
       id: agent.id,
       name: agent.name,
+      avatar: agent.avatar,
       model: agent.model,
       level: agent.level,
       burst: agent.burst,
