@@ -16,7 +16,9 @@ export async function GET(request: NextRequest) {
   const jar = await cookies();
   const expected = jar.get(STATE_COOKIE)?.value;
   jar.delete(STATE_COOKIE);
-  const slug = expected?.split(".", 1)[0] ?? "";
+  const [slug = "", target = "", nonce] = expected?.split(".") ?? [];
+  // `slug.nonce` connects the project; `slug.repo-<id>.nonce` one of its other repositories (#2).
+  const repositoryId = nonce !== undefined && target.startsWith("repo-") ? target.slice(5) : null;
   const settingsUrl = new URL(`/projects/${encodeURIComponent(slug)}/settings`, request.url);
 
   if (!expected || state !== expected || !/^[a-z0-9-]{1,48}$/.test(slug) || !/^\d{1,20}$/.test(installationId) || !["install", "update"].includes(setupAction ?? "")) {
@@ -28,6 +30,32 @@ export async function GET(request: NextRequest) {
   if (!tenantId || !(await isTenantAdmin(user, tenantId))) return NextResponse.redirect(new URL("/issues", request.url));
   const project = await prisma.project.findFirst({ where: { tenantId, slug }, select: { id: true, githubInstallationId: true } });
   if (!project) return NextResponse.redirect(new URL("/projects", request.url));
+  if (repositoryId !== null) {
+    const repository = /^[a-z0-9]{8,40}$/.test(repositoryId)
+      ? await prisma.projectRepository.findFirst({
+          where: { id: repositoryId, projectId: project.id },
+          select: { id: true, url: true, githubInstallationId: true },
+        })
+      : null;
+    if (!repository) {
+      settingsUrl.searchParams.set("github", "error");
+      return NextResponse.redirect(settingsUrl);
+    }
+    await prisma.$transaction(async (tx) => {
+      await tx.projectRepository.update({ where: { id: repository.id }, data: { githubInstallationId: installationId } });
+      await tx.projectAuditEvent.create({
+        data: {
+          tenantId,
+          projectId: project.id,
+          actorUserId: user.id,
+          action: "github.installation.connected",
+          changes: { repository: repository.url, githubInstallationId: { from: repository.githubInstallationId, to: installationId } },
+        },
+      });
+    });
+    settingsUrl.searchParams.set("github", "connected");
+    return NextResponse.redirect(settingsUrl);
+  }
   await prisma.$transaction(async (tx) => {
     await tx.project.update({ where: { id: project.id }, data: { githubInstallationId: installationId } });
     await tx.projectAuditEvent.create({

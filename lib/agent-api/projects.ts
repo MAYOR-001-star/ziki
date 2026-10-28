@@ -17,11 +17,28 @@ import type { Prisma } from "@prisma/client";
  *
  * `githubInstallationId` is deliberately not selected — it is deployment
  * configuration, not agent-visible data.
+ *
+ * `repositories` (#2) lists every repository a fix can be in: the main one
+ * (`repoUrl`, kept for older agents) first, then the project's others.
  */
 const projectSelect = {
   id: true, slug: true, name: true, goal: true, repoUrl: true, stagingUrl: true, rewardConfig: true,
   workflow: true,
+  repositories: {
+    select: { url: true, label: true, branch: true },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+  },
 } satisfies Prisma.ProjectSelect;
+
+type AgentRepository = { url: string; label: string | null; branch: string | null; main: boolean };
+
+function agentRepositories(project: {
+  repoUrl: string | null;
+  repositories?: { url: string; label: string | null; branch: string | null }[];
+}): AgentRepository[] {
+  const main = project.repoUrl ? [{ url: project.repoUrl, label: null, branch: null, main: true }] : [];
+  return [...main, ...(project.repositories ?? []).map((repository) => ({ ...repository, main: false }))];
+}
 
 export async function listAgentProjectSummaries(tenantId: string) {
   return prisma.project.findMany({
@@ -52,6 +69,7 @@ export async function listAgentProjects(tenantId: string) {
     ...project,
     notesUrl: `/api/v1/projects/${project.id}/notes`,
     notesCommentsUrl: `/api/v1/projects/${project.id}/notes/comments`,
+    repositories: agentRepositories(project),
     rewardRules: parseProjectRewardConfig(project.rewardConfig, base),
     workflow: workflowValues(project.workflow),
     openIssueCount: openByProject.get(project.id) ?? 0,
@@ -75,6 +93,7 @@ export async function getAgentProject(tenantId: string, projectId: string) {
     ...project,
     notesUrl: `/api/v1/projects/${project.id}/notes`,
     notesCommentsUrl: `/api/v1/projects/${project.id}/notes/comments`,
+    repositories: agentRepositories(project),
     rewardRules: parseProjectRewardConfig(project.rewardConfig, projectDefaultsFromPlatform(platform)),
     workflow: workflowValues(project.workflow),
     openIssueCount,
