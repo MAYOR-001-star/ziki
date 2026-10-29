@@ -16,6 +16,7 @@ import { sendMail, smtpConfigured } from "@/lib/mail";
 import { logger } from "@/lib/logger";
 import { consumeAuthRateLimit, RATE_LIMIT_MESSAGE } from "@/lib/rate-limit";
 import { changePasswordSchema } from "@/lib/validations/issue";
+import { validateAvatarBytes, toAvatarDataUrl } from "@/lib/avatar-upload";
 
 export type SettingsResult = { error?: string; ok?: boolean; emailNotifications?: boolean };
 
@@ -24,6 +25,8 @@ export type DisplayNameResult = Partial<FieldErrorResult> & { ok?: boolean; name
 export type WalletResult = Partial<FieldErrorResult> & { ok?: boolean; walletAddress?: string | null };
 
 export type ChangePasswordResult = Partial<FieldErrorResult> & { ok?: boolean };
+
+export type AvatarResult = { error?: string; ok?: boolean; image?: string | null };
 
 /**
  * Change a credentials password from Settings (#570). Updating sessionVersion
@@ -206,4 +209,50 @@ export async function setWalletAddressAction(
   revalidatePath("/settings");
   revalidatePath(`/users/${user.id}`);
   return { ok: true, walletAddress: parsed.data };
+}
+
+/**
+ * Update the signed-in person's profile avatar image (#290, #576).
+ */
+export async function updateAvatarAction(
+  _prev: AvatarResult | undefined,
+  formData: FormData,
+): Promise<AvatarResult> {
+  const user = await requireUser();
+  const file = formData.get("avatar");
+  if (!file || !(file instanceof File)) {
+    return { error: "Please select an image file to upload." };
+  }
+  const arrayBuffer = await file.arrayBuffer();
+  const bytes = new Uint8Array(arrayBuffer);
+  const validated = validateAvatarBytes(bytes);
+  if (!validated.ok) {
+    return { error: validated.error };
+  }
+  const dataUrl = toAvatarDataUrl(bytes, validated.contentType);
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { image: dataUrl },
+  });
+  revalidatePath("/", "layout");
+  revalidatePath("/settings");
+  revalidatePath("/settings/profile");
+  revalidatePath(`/users/${user.id}`);
+  return { ok: true, image: dataUrl };
+}
+
+/**
+ * Remove the signed-in person's profile avatar, reverting to initials fallback (#290, #576).
+ */
+export async function removeAvatarAction(): Promise<AvatarResult> {
+  const user = await requireUser();
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { image: null },
+  });
+  revalidatePath("/", "layout");
+  revalidatePath("/settings");
+  revalidatePath("/settings/profile");
+  revalidatePath(`/users/${user.id}`);
+  return { ok: true, image: null };
 }

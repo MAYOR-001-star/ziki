@@ -1,5 +1,5 @@
 /**
- * Helpers behind the shared <Avatar> (#290).
+ * Helpers behind the shared <Avatar> (#290, #576).
  */
 
 /**
@@ -34,14 +34,19 @@ export function avatarTone(name?: string | null): string {
 }
 
 /**
- * Only https image URLs are used. `User.image` comes from the sign-in
- * provider, but nothing else should ever put a `javascript:`, `data:` or
- * plain-http address in an <img>; those fall back to initials instead.
+ * Only https image URLs or safe raster image data URLs (PNG, JPEG, WebP, GIF)
+ * are accepted (#290, #576). Scriptable types (SVG, HTML), plain-http, and
+ * javascript: addresses fall back to initials instead.
  */
 export function safeAvatarUrl(image?: string | null): string | null {
-  if (!image) return null;
+  if (!image || typeof image !== "string") return null;
+  const trimmed = image.trim();
+  if (trimmed.startsWith("data:image/")) {
+    const isSafeRaster = /^data:image\/(png|jpeg|jpg|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(trimmed);
+    return isSafeRaster ? trimmed : null;
+  }
   try {
-    const url = new URL(image);
+    const url = new URL(trimmed);
     return url.protocol === "https:" ? url.toString() : null;
   } catch {
     return null;
