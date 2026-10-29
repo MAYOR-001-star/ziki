@@ -101,13 +101,12 @@ describe("isValidHostHeader", () => {
 });
 
 describe("getRequestOrigin", () => {
-  // These cases cover the request-based path, so no configured URL may leak in from
-  // the environment (CI sets AUTH_URL / NEXTAUTH_URL, which would win by design).
   beforeEach(() => {
     vi.stubEnv("AUTH_URL", "");
     vi.stubEnv("NEXTAUTH_URL", "");
     vi.stubEnv("NEXT_PUBLIC_SITE_URL", "");
   });
+
   afterEach(() => {
     vi.unstubAllEnvs();
   });
@@ -129,6 +128,18 @@ describe("getRequestOrigin", () => {
     });
     expect(getRequestOrigin({ url: "http://localhost:3001/projects/github/callback", headers })).toBe(
       "http://localhost:3001",
+    );
+  });
+
+  it("prioritizes configured URL (NEXTAUTH_URL) over proxy headers", () => {
+    vi.stubEnv("NEXTAUTH_URL", "https://ziki.dev");
+    const headers = new Headers({
+      "x-forwarded-host": "attacker.example",
+      "x-forwarded-proto": "https",
+      host: "0.0.0.0:3000",
+    });
+    expect(getRequestOrigin({ url: "http://0.0.0.0:3000/projects/github/callback", headers })).toBe(
+      "https://ziki.dev",
     );
   });
 });

@@ -8,8 +8,9 @@ import { SignOutButton } from "@/components/sign-out-button";
 import { WorkspaceSwitcher, type WorkspaceChoice } from "@/components/workspace-switcher";
 import {
   AGENT_MENU_LINKS,
+  CREATE_AGENT_HREF,
+  agentPageHref,
   headerNavItems,
-  initialsOf,
   isNavItemActive,
   realRoleOf,
   roleViewLabels,
@@ -17,6 +18,7 @@ import {
 import { AGENT_LEVEL_LABELS } from "@/lib/agents/levels";
 import { isSuperAdmin, type AppRole } from "@/lib/roles";
 import { Avatar } from "@/components/avatar";
+import { AgentAvatar } from "@/components/agent-avatar";
 import { AccountThemeSelector } from "@/components/theme-toggle";
 import { formatPoints, pointsProgress, TARGET_POINTS } from "@/lib/points/rules";
 import { recentNotificationsAction } from "@/app/actions/notifications";
@@ -319,13 +321,11 @@ function AgentsMenu({ pathname, agents }: { pathname: string | null; agents: She
           {agents.map((agent) => (
             <Link
               key={agent.id}
-              href="/settings/agents"
+              href={agentPageHref(agent.name)}
               onClick={() => setOpen(false)}
               className="flex min-h-11 items-center gap-2.5 rounded-[10px] px-2.5 text-left text-zk-text"
             >
-              <span className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-zk-tint text-xs font-extrabold text-zk-accent">
-                {initialsOf(agent.name)}
-              </span>
+              <AgentAvatar agentId={agent.id} size={30} />
               <span className="min-w-0 flex-1 truncate font-semibold">{agent.name}</span>
               <span className="rounded-full bg-zk-info-bg px-2 py-0.5 text-[11px] font-bold text-zk-info-fg">
                 {levelLabel(agent.level)}
@@ -334,7 +334,7 @@ function AgentsMenu({ pathname, agents }: { pathname: string | null; agents: She
           ))}
           {agents.length > 0 ? <div className="my-1 h-px bg-zk-divider" /> : null}
           <Link
-            href="/settings/agents"
+            href={CREATE_AGENT_HREF}
             onClick={() => setOpen(false)}
             className="flex min-h-11 items-center gap-2 rounded-[10px] px-2.5 font-bold text-zk-accent"
           >

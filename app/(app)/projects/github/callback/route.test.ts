@@ -31,8 +31,6 @@ const callback = (query: string) => new NextRequest(`http://localhost/projects/g
 
 beforeEach(() => {
   vi.clearAllMocks();
-  // Redirects follow the request's origin here; a configured URL from the
-  // environment (CI sets AUTH_URL / NEXTAUTH_URL) would override it by design.
   vi.stubEnv("AUTH_URL", "");
   vi.stubEnv("NEXTAUTH_URL", "");
   vi.stubEnv("NEXT_PUBLIC_SITE_URL", "");

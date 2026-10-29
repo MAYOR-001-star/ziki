@@ -1,24 +1,21 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import type { AgentLevel } from "@prisma/client";
-import { AGENT_LEVEL_LABELS, AGENT_LEVELS } from "@/lib/agents/levels";
+import { AGENT_LEVEL_LABELS } from "@/lib/agents/levels";
+import { agentPageHref } from "@/lib/header-nav";
+import { AgentAvatar } from "@/components/agent-avatar";
 import { LocalTime } from "@/components/local-time";
 import { RelativeTime } from "@/components/relative-time";
 import { AgentControls } from "./agent-controls";
 import { AgentRowKey } from "./agent-row-key";
 import type { AgentProjectChoice } from "./create-agent-form";
 import {
-  agentAvatarColor,
-  agentInitials,
-  agentsLink,
   agentsMutedClass,
   agentsSurface,
   levelBadgeClass,
 } from "./agents-ui";
-
-type FilterId = "all" | AgentLevel;
 
 export type ManageAgentItem = {
   id: string;
@@ -40,7 +37,6 @@ export type ManageAgentItem = {
     projectName: string | null;
     lastUsedAt: string | null;
   }[];
-  areaPreferences: { projectId: string; projectAreaId: string }[];
 };
 
 export function ManageAgentsList({
@@ -49,7 +45,6 @@ export function ManageAgentsList({
   maxActive,
   levels,
   projects,
-  areas,
   now,
   canSetBurst,
 }: {
@@ -58,27 +53,12 @@ export function ManageAgentsList({
   maxActive: number;
   levels: AgentLevel[];
   projects: AgentProjectChoice[];
-  areas: { id: string; name: string; projectId: string }[];
   now: string;
   canSetBurst: boolean;
 }) {
-  const [filter, setFilter] = useState<FilterId>("all");
   const [query, setQuery] = useState("");
 
-  const covered = useMemo(() => {
-    const set = new Set(agents.filter((a) => !a.revokedAt).map((a) => a.level));
-    return AGENT_LEVELS.map((level) => ({ level, on: set.has(level) }));
-  }, [agents]);
-
-  const tabs: { id: FilterId; label: string }[] = [
-    { id: "all", label: "All" },
-    { id: "contributor", label: "Contributor" },
-    { id: "triager", label: "Triager" },
-    { id: "reviewer", label: "Reviewer" },
-  ];
-
   const visible = agents.filter((agent) => {
-    if (filter !== "all" && agent.level !== filter) return false;
     if (!query.trim()) return true;
     const q = query.trim().toLowerCase();
     return (
@@ -110,23 +90,6 @@ export function ManageAgentsList({
             />
           </div>
         </div>
-        <div className={`${agentsSurface} p-4`}>
-          <p className="text-xs font-bold uppercase tracking-[0.06em] text-zk-muted">Roles covered</p>
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {covered.map(({ level, on }) => (
-              <span
-                key={level}
-                className={
-                  on
-                    ? levelBadgeClass(level)
-                    : "inline-flex items-center rounded-full border border-dashed border-zk-border px-2.5 py-0.5 text-xs font-bold text-zk-muted"
-                }
-              >
-                {AGENT_LEVEL_LABELS[level]}
-              </span>
-            ))}
-          </div>
-        </div>
       </div>
 
       {legacyCount > 0 ? (
@@ -152,141 +115,117 @@ export function ManageAgentsList({
             className="h-11 w-full rounded-full border border-zk-border bg-zk-surface px-4 text-sm text-zk-text placeholder:text-zk-muted focus:border-electric-blue focus:outline-none focus:ring-2 focus:ring-electric-blue/20"
           />
         </label>
-        <div role="tablist" aria-label="Filter by role" className="inline-flex flex-wrap gap-1 rounded-full bg-zk-seg p-1">
-          {tabs.map((tab) => {
-            const on = filter === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                aria-selected={on}
-                onClick={() => setFilter(tab.id)}
-                className={`min-h-[34px] rounded-full px-3.5 text-[13px] transition ${
-                  on
-                    ? "bg-zk-surface font-bold text-zk-text shadow-sm"
-                    : "font-medium text-zk-text2 hover:text-zk-text"
-                }`}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
       </div>
 
       {visible.length === 0 ? (
         <p className={`${agentsMutedClass} ${agentsSurface} p-6`}>
-          {agents.length === 0 ? "No agents yet." : "No agents with this role yet."}
+          {agents.length === 0 ? "No agents yet." : "No agents match your search."}
         </p>
       ) : (
-        <ul className="space-y-3">
+        <ul className="grid gap-4 md:grid-cols-2">
           {visible.map((agent) => {
             const lastUsed = agent.apiKeys.find((key) => key.lastUsedAt)?.lastUsedAt ?? null;
             return (
-              <li key={agent.id} className={`${agentsSurface} p-4 sm:p-5`}>
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="flex min-w-0 gap-3">
-                    <div className="relative shrink-0">
+              // The name's link is stretched over the card, so a click anywhere opens the
+              // agent's page; the key and controls sit above it and keep their own clicks.
+              <li
+                key={agent.id}
+                className={`${agentsSurface} group relative flex flex-col gap-4 p-4 transition hover:border-electric-blue/50 hover:shadow-[0_10px_28px_rgba(11,23,51,0.10)] sm:p-5`}
+              >
+                <div className="flex min-w-0 items-start gap-3">
+                  <div className="relative shrink-0">
+                    <AgentAvatar agentId={agent.id} size={56} />
+                    {!agent.revokedAt ? (
                       <span
-                        className={`flex h-11 w-11 items-center justify-center rounded-full text-sm font-extrabold text-white ${agentAvatarColor(agent.id)}`}
-                      >
-                        {agentInitials(agent.name)}
-                      </span>
-                      {!agent.revokedAt ? (
-                        <span
-                          className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-zk-surface ${
-                            agent.recent ? "bg-emerald-500" : "bg-slate-400"
-                          }`}
-                          aria-hidden
-                        />
-                      ) : null}
-                    </div>
-                    <div className="min-w-0 space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="break-words text-base font-extrabold text-zk-text">
-                          {agent.name}
-                          {agent.personal ? <span className="font-normal text-zk-muted"> · personal</span> : null}
-                        </p>
-                        <span className={levelBadgeClass(agent.level)}>{AGENT_LEVEL_LABELS[agent.level]}</span>
-                        {agent.revokedAt ? (
-                          <span className="inline-flex items-center rounded-full bg-zk-bad-bg px-2.5 py-0.5 text-xs font-bold text-zk-bad-fg">
-                            Revoked
-                          </span>
-                        ) : null}
-                      </div>
-                      {agent.model ? <p className="text-sm text-zk-muted">{agent.model}</p> : null}
-                      <p className="text-xs text-zk-muted">
-                        {agent.revokedAt ? (
-                          <>
-                            Revoked <LocalTime date={agent.revokedAt} />
-                          </>
-                        ) : agent.apiKeys.length === 0 ? (
-                          <>
-                            No key · Added <LocalTime date={agent.createdAt} />
-                          </>
-                        ) : (
-                          <>
-                            {lastUsed ? (
-                              <>
-                                Last used <RelativeTime date={lastUsed} />
-                              </>
-                            ) : (
-                              <>Never used</>
-                            )}
-                            {" · "}
-                            Added <LocalTime date={agent.createdAt} />
-                          </>
-                        )}
-                      </p>
-                      <Link href={`/settings/agents/${agent.id}/messages`} className={`text-xs ${agentsLink}`}>
-                        Messages and instructions
-                      </Link>
-                      {!agent.revokedAt ? (
-                        <div className="space-y-1.5 pt-1">
-                          {agent.apiKeys.map((key) => (
-                            <AgentRowKey
-                              key={key.id}
-                              apiKey={key.apiKey}
-                              prefix={key.prefix}
-                              projectId={key.projectId}
-                              projectName={key.projectName}
-                            />
-                          ))}
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-                  <div className="w-full shrink-0 lg:max-w-md">
-                    {agent.revokedAt ? (
-                      <AgentControls
-                        revoked
-                        personal={agent.personal}
-                        agentId={agent.id}
-                        agentName={agent.name}
-                        level={agent.level}
-                        levels={levels}
-                        projects={projects}
-                        now={now}
+                        className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-zk-surface ${
+                          agent.recent ? "bg-emerald-500" : "bg-slate-400"
+                        }`}
+                        aria-hidden
                       />
-                    ) : (
-                      <AgentControls
-                        personal={agent.personal}
-                        agentId={agent.id}
-                        agentName={agent.name}
-                        level={agent.level}
-                        levels={levels}
-                        projects={projects}
-                        currentProjectId={agent.currentProjectId}
-                        burst={agent.burst}
-                        burstUntil={agent.burstUntil}
-                        now={now}
-                        canSetBurst={canSetBurst}
-                        areas={areas}
-                        areaPreferences={agent.areaPreferences}
-                      />
-                    )}
+                    ) : null}
                   </div>
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <Link
+                      href={agentPageHref(agent.name)}
+                      className="block break-words text-base font-extrabold text-zk-text after:absolute after:inset-0 after:rounded-[20px] after:content-[''] hover:text-zk-accent focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-electric-blue"
+                    >
+                      {agent.name}
+                      {agent.personal ? <span className="font-normal text-zk-muted"> · personal</span> : null}
+                    </Link>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={levelBadgeClass(agent.level)}>{AGENT_LEVEL_LABELS[agent.level]}</span>
+                      {agent.revokedAt ? (
+                        <span className="inline-flex items-center rounded-full bg-zk-bad-bg px-2.5 py-0.5 text-xs font-bold text-zk-bad-fg">
+                          Revoked
+                        </span>
+                      ) : null}
+                      {agent.model ? <span className="text-sm text-zk-muted">{agent.model}</span> : null}
+                    </div>
+                    <p className="text-xs text-zk-muted">
+                      {agent.revokedAt ? (
+                        <>
+                          Revoked <LocalTime date={agent.revokedAt} />
+                        </>
+                      ) : agent.apiKeys.length === 0 ? (
+                        <>
+                          No key · Added <LocalTime date={agent.createdAt} />
+                        </>
+                      ) : (
+                        <>
+                          {lastUsed ? (
+                            <>
+                              Last used <RelativeTime date={lastUsed} />
+                            </>
+                          ) : (
+                            <>Never used</>
+                          )}
+                          {" · "}
+                          Added <LocalTime date={agent.createdAt} />
+                        </>
+                      )}
+                    </p>
+                  </div>
+                </div>
+                {!agent.revokedAt && agent.apiKeys.length ? (
+                  <div className="relative z-10 space-y-1.5">
+                    {agent.apiKeys.map((key) => (
+                      <AgentRowKey
+                        key={key.id}
+                        apiKey={key.apiKey}
+                        prefix={key.prefix}
+                        projectId={key.projectId}
+                        projectName={key.projectName}
+                      />
+                    ))}
+                  </div>
+                ) : null}
+                <div className="relative z-10 mt-auto border-t border-zk-divider pt-4">
+                  {agent.revokedAt ? (
+                    <AgentControls
+                      revoked
+                      personal={agent.personal}
+                      agentId={agent.id}
+                      agentName={agent.name}
+                      level={agent.level}
+                      levels={levels}
+                      projects={projects}
+                      now={now}
+                    />
+                  ) : (
+                    <AgentControls
+                      personal={agent.personal}
+                      agentId={agent.id}
+                      agentName={agent.name}
+                      level={agent.level}
+                      levels={levels}
+                      projects={projects}
+                      currentProjectId={agent.currentProjectId}
+                      burst={agent.burst}
+                      burstUntil={agent.burstUntil}
+                      now={now}
+                      canSetBurst={canSetBurst}
+                    />
+                  )}
                 </div>
               </li>
             );

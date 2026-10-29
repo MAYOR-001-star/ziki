@@ -199,6 +199,29 @@ describe("account menu role switch", () => {
     expect(screen.getByRole("link", { name: "Ziki" }).getAttribute("href")).toBe("/dashboard");
   });
 
+  it("opens each agent in the Agents menu on that agent's own page", async () => {
+    const user = userEvent.setup();
+    renderHeader({
+      agents: [
+        { id: "agent_1", name: "Pixel", level: "contributor" },
+        { id: "agent_2", name: "Scout Two", level: "reviewer" },
+      ],
+    });
+    await user.click(screen.getByRole("button", { name: "Agents" }));
+    expect(screen.getByRole("link", { name: /Pixel/ }).getAttribute("href")).toBe("/settings/agent/Pixel");
+    expect(screen.getByRole("link", { name: /Scout Two/ }).getAttribute("href")).toBe("/settings/agent/Scout%20Two");
+    // Each agent wears the same robot avatar it has everywhere else.
+    expect(screen.getByRole("link", { name: /Pixel/ }).querySelector('[data-testid="agent-avatar"]')).toBeTruthy();
+  });
+
+  it("sends Manage agents and Create agent to separate pages", async () => {
+    const user = userEvent.setup();
+    renderHeader();
+    await user.click(screen.getByRole("button", { name: "Agents" }));
+    expect(screen.getByRole("link", { name: "Manage agents" }).getAttribute("href")).toBe("/agents");
+    expect(screen.getByRole("link", { name: "Create agent" }).getAttribute("href")).toBe("/settings/connect");
+  });
+
   it("closes the Agents menu when a destination is chosen", async () => {
     const user = userEvent.setup();
     renderHeader();
