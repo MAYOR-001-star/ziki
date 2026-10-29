@@ -34,19 +34,15 @@ export function avatarTone(name?: string | null): string {
 }
 
 /**
- * Only https image URLs or safe raster image data URLs (PNG, JPEG, WebP, GIF)
- * are accepted (#290, #576). Scriptable types (SVG, HTML), plain-http, and
- * javascript: addresses fall back to initials instead.
+ * Only https image URLs are used (#290, #576). `User.image` comes from the sign-in
+ * provider or an uploaded avatar endpoint, but nothing else should ever put a
+ * `javascript:`, `data:` or plain-http address in an <img>; those fall back to
+ * initials instead.
  */
 export function safeAvatarUrl(image?: string | null): string | null {
-  if (!image || typeof image !== "string") return null;
-  const trimmed = image.trim();
-  if (trimmed.startsWith("data:image/")) {
-    const isSafeRaster = /^data:image\/(png|jpeg|jpg|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(trimmed);
-    return isSafeRaster ? trimmed : null;
-  }
+  if (!image) return null;
   try {
-    const url = new URL(trimmed);
+    const url = new URL(image);
     return url.protocol === "https:" ? url.toString() : null;
   } catch {
     return null;

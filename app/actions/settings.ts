@@ -16,7 +16,7 @@ import { sendMail, smtpConfigured } from "@/lib/mail";
 import { logger } from "@/lib/logger";
 import { consumeAuthRateLimit, RATE_LIMIT_MESSAGE } from "@/lib/rate-limit";
 import { changePasswordSchema } from "@/lib/validations/issue";
-import { validateAvatarBytes, toAvatarDataUrl } from "@/lib/avatar-upload";
+import { validateAvatarBytes } from "@/lib/avatar-upload";
 
 export type SettingsResult = { error?: string; ok?: boolean; emailNotifications?: boolean };
 
@@ -229,16 +229,38 @@ export async function updateAvatarAction(
   if (!validated.ok) {
     return { error: validated.error };
   }
-  const dataUrl = toAvatarDataUrl(bytes, validated.contentType);
+
+  // Remove previous avatar attachments for this user
+  await prisma.attachment.deleteMany({
+    where: { uploaderId: user.id, filename: { startsWith: "avatar" } },
+  }).catch(() => undefined);
+
+  const ext = validated.contentType.split("/")[1] || "png";
+  await prisma.attachment.create({
+    data: {
+      uploaderId: user.id,
+      filename: `avatar-${user.id}.${ext}`,
+      contentType: validated.contentType,
+      size: bytes.byteLength,
+      data: Buffer.from(bytes),
+    },
+  });
+
+  const base = (process.env.NEXT_PUBLIC_SITE_URL || "https://ziki.dev")
+    .replace(/^http:\/\//i, "https://")
+    .replace(/\/$/, "");
+  const avatarUrl = `${base}/api/users/${user.id}/avatar?v=${Date.now()}`;
+
   await prisma.user.update({
     where: { id: user.id },
-    data: { image: dataUrl },
+    data: { image: avatarUrl },
   });
+
   revalidatePath("/", "layout");
   revalidatePath("/settings");
   revalidatePath("/settings/profile");
   revalidatePath(`/users/${user.id}`);
-  return { ok: true, image: dataUrl };
+  return { ok: true, image: avatarUrl };
 }
 
 /**
@@ -246,10 +268,15 @@ export async function updateAvatarAction(
  */
 export async function removeAvatarAction(): Promise<AvatarResult> {
   const user = await requireUser();
+  await prisma.attachment.deleteMany({
+    where: { uploaderId: user.id, filename: { startsWith: "avatar" } },
+  }).catch(() => undefined);
+
   await prisma.user.update({
     where: { id: user.id },
     data: { image: null },
   });
+
   revalidatePath("/", "layout");
   revalidatePath("/settings");
   revalidatePath("/settings/profile");

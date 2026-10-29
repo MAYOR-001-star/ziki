@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth-helpers";
-import { validateAvatarBytes, toAvatarDataUrl } from "@/lib/avatar-upload";
+import { validateAvatarBytes } from "@/lib/avatar-upload";
 
 /**
  * GET /api/user/avatar — returns the signed-in user's avatar image URL.
@@ -39,10 +39,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: validated.error }, { status: 400 });
   }
 
-  const dataUrl = toAvatarDataUrl(bytes, validated.contentType);
+  await prisma.attachment.deleteMany({
+    where: { uploaderId: user.id, filename: { startsWith: "avatar" } },
+  }).catch(() => undefined);
+
+  const ext = validated.contentType.split("/")[1] || "png";
+  await prisma.attachment.create({
+    data: {
+      uploaderId: user.id,
+      filename: `avatar-${user.id}.${ext}`,
+      contentType: validated.contentType,
+      size: bytes.byteLength,
+      data: Buffer.from(bytes),
+    },
+  });
+
+  const base = (process.env.NEXT_PUBLIC_SITE_URL || "https://ziki.dev")
+    .replace(/^http:\/\//i, "https://")
+    .replace(/\/$/, "");
+  const avatarUrl = `${base}/api/users/${user.id}/avatar?v=${Date.now()}`;
+
   await prisma.user.update({
     where: { id: user.id },
-    data: { image: dataUrl },
+    data: { image: avatarUrl },
   });
 
   revalidatePath("/", "layout");
@@ -50,7 +69,7 @@ export async function POST(req: NextRequest) {
   revalidatePath("/settings/profile");
   revalidatePath(`/users/${user.id}`);
 
-  return NextResponse.json({ ok: true, image: dataUrl });
+  return NextResponse.json({ ok: true, image: avatarUrl });
 }
 
 /**
@@ -58,6 +77,10 @@ export async function POST(req: NextRequest) {
  */
 export async function DELETE() {
   const user = await requireUser();
+  await prisma.attachment.deleteMany({
+    where: { uploaderId: user.id, filename: { startsWith: "avatar" } },
+  }).catch(() => undefined);
+
   await prisma.user.update({
     where: { id: user.id },
     data: { image: null },
@@ -70,4 +93,3 @@ export async function DELETE() {
 
   return NextResponse.json({ ok: true, image: null });
 }
-

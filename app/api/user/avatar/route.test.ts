@@ -10,6 +10,10 @@ vi.mock("@/lib/prisma", () => ({
       findUnique: vi.fn(),
       update: vi.fn(),
     },
+    attachment: {
+      create: vi.fn(),
+      deleteMany: vi.fn(),
+    },
   },
 }));
 
@@ -19,6 +23,8 @@ import { GET, POST, DELETE } from "./route";
 
 const findUnique = vi.mocked(prisma.user.findUnique) as unknown as ReturnType<typeof vi.fn>;
 const update = vi.mocked(prisma.user.update) as unknown as ReturnType<typeof vi.fn>;
+const attachmentCreate = vi.mocked(prisma.attachment.create) as unknown as ReturnType<typeof vi.fn>;
+const attachmentDelete = vi.mocked(prisma.attachment.deleteMany) as unknown as ReturnType<typeof vi.fn>;
 
 const pngBytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3]);
 
@@ -26,6 +32,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   requireUser.mockResolvedValue({ id: "user-123", name: "Ada Lovelace", role: "user" });
   update.mockResolvedValue({ id: "user-123" });
+  attachmentCreate.mockResolvedValue({ id: "att-1" });
+  attachmentDelete.mockResolvedValue({ count: 1 });
 });
 
 describe("GET /api/user/avatar", () => {
@@ -84,11 +92,19 @@ describe("POST /api/user/avatar", () => {
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.ok).toBe(true);
-    expect(json.image).toContain("data:image/png;base64,");
+    expect(json.image).toContain("https://");
+    expect(json.image).toContain("/api/users/user-123/avatar");
+
+    expect(attachmentCreate).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        uploaderId: "user-123",
+        contentType: "image/png",
+      }),
+    }));
 
     expect(update).toHaveBeenCalledWith({
       where: { id: "user-123" },
-      data: { image: expect.stringMatching(/^data:image\/png;base64,/) },
+      data: { image: expect.stringMatching(/^https:\/\/.+\/api\/users\/user-123\/avatar\?v=\d+/) },
     });
     expect(revalidatePath).toHaveBeenCalledWith("/", "layout");
     expect(revalidatePath).toHaveBeenCalledWith("/settings/profile");
@@ -101,6 +117,9 @@ describe("DELETE /api/user/avatar", () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true, image: null });
 
+    expect(attachmentDelete).toHaveBeenCalledWith({
+      where: { uploaderId: "user-123", filename: { startsWith: "avatar" } },
+    });
     expect(update).toHaveBeenCalledWith({
       where: { id: "user-123" },
       data: { image: null },
@@ -109,4 +128,3 @@ describe("DELETE /api/user/avatar", () => {
     expect(revalidatePath).toHaveBeenCalledWith("/settings/profile");
   });
 });
-

@@ -83,28 +83,25 @@ describe("validateAvatarBytes", () => {
 });
 
 describe("toAvatarDataUrl and safeAvatarUrl integration", () => {
-  it("formats and accepts valid data URLs", () => {
+  it("formats data URLs correctly", () => {
     const pngBytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3]);
     const dataUrl = toAvatarDataUrl(pngBytes, "image/png");
     expect(dataUrl.startsWith("data:image/png;base64,")).toBe(true);
-    expect(safeAvatarUrl(dataUrl)).toBe(dataUrl);
   });
 
-  it("safeAvatarUrl accepts jpeg, webp, and gif data URLs", () => {
-    const sample = "data:image/jpeg;base64,/9j/4AAQSkZJRg==";
-    expect(safeAvatarUrl(sample)).toBe(sample);
-
-    const webpSample = "data:image/webp;base64,UklGRg==";
-    expect(safeAvatarUrl(webpSample)).toBe(webpSample);
-
-    const gifSample = "data:image/gif;base64,R0lGODlh";
-    expect(safeAvatarUrl(gifSample)).toBe(gifSample);
-  });
-
-  it("safeAvatarUrl rejects svg, html, and corrupt data URLs", () => {
+  it("safeAvatarUrl strictly rejects data URLs per security rules (#290)", () => {
+    expect(safeAvatarUrl("data:image/png;base64,AAAA")).toBeNull();
+    expect(safeAvatarUrl("data:image/jpeg;base64,/9j/4AAQSkZJRg==")).toBeNull();
     expect(safeAvatarUrl("data:image/svg+xml;base64,PHN2Zz4=")).toBeNull();
     expect(safeAvatarUrl("data:text/html;base64,PGh0bWw+")).toBeNull();
-    expect(safeAvatarUrl("data:image/png;not-base64-content!")).toBeNull();
+  });
+
+  it("safeAvatarUrl accepts https avatar URLs", () => {
+    expect(safeAvatarUrl("https://ziki.dev/api/users/user_1/avatar")).toBe(
+      "https://ziki.dev/api/users/user_1/avatar",
+    );
+    expect(safeAvatarUrl("https://lh3.googleusercontent.com/a/abc=s96-c")).toBe(
+      "https://lh3.googleusercontent.com/a/abc=s96-c",
+    );
   });
 });
-
