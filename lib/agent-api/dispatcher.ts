@@ -52,7 +52,7 @@ export async function findReadyIssues(
   limit = 50,
   options?: { hasBids?: boolean; bidCreatedBefore?: Date }
 ): Promise<ReadyIssue[]> {
-  requireLevel(agent, "dispatcher");
+  requireLevel(agent, "manager");
 
   const workflow = await workflowFor(projectId);
   const offerCutoff = new Date(Date.now() - workflow.offerWindowSeconds * 1000);
@@ -140,7 +140,7 @@ export async function dispatchReadyIssues(
   projectId: string,
   config: DispatcherConfig = {}
 ): Promise<DispatcherResult> {
-  requireLevel(agent, "dispatcher");
+  requireLevel(agent, "manager");
 
   const {
     policy = "offer_only",
@@ -336,7 +336,7 @@ export async function getDispatcherMetrics(
   pendingOffers: number;
   openBids: number;
 }> {
-  requireLevel(agent, "dispatcher");
+  requireLevel(agent, "manager");
 
   const workflow = await workflowFor(projectId);
   const offerCutoff = new Date(Date.now() - workflow.offerWindowSeconds * 1000);
