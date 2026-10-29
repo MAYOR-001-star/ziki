@@ -31,8 +31,9 @@ export async function POST(req: NextRequest) {
   const result = await collectPairing(body?.device_code);
   switch (result.status) {
     case "issued": {
+      // The key is shown only in this response, so the work URL is a best effort and never fails it.
       const project = result.projectId
-        ? await prisma.project.findUnique({ where: { id: result.projectId }, select: { slug: true } })
+        ? await prisma.project.findUnique({ where: { id: result.projectId }, select: { slug: true } }).catch(() => null)
         : null;
       return NextResponse.json(
         {
