@@ -17,6 +17,8 @@ export type HeaderNavItem = {
 
 /** #444: pick another tenant, create one, or accept an invite. */
 export const SWITCH_TENANT_LINK: HeaderNavItem = { href: "/tenants", label: "Switch workspace" };
+/** #441, #445: Canonical entity alias. */
+export const SWITCH_ORGANISATION_LINK: HeaderNavItem = { href: "/tenants", label: "Switch organisation" };
 
 /** Links shown in the header for the role the user is currently viewing as (#761). */
 export function headerNavItems(
@@ -113,7 +115,10 @@ export function initialsOf(name?: string | null): string {
   if (!clean) return "?";
   const base = clean.includes("@") ? clean.split("@")[0] : clean;
   const parts = base.split(/[\s._-]+/).filter(Boolean);
-  const letters =
-    parts.length >= 2 ? parts[0][0] + parts[parts.length - 1][0] : base.slice(0, 2);
-  return letters.toUpperCase();
+  // Spread (`[...str]`) iterates by Unicode code point, so emoji surrogate
+  // pairs (e.g. "😀") stay intact instead of splitting into lone surrogates.
+  const firstChars = parts.length >= 2
+    ? [[...parts[0]][0], [...parts[parts.length - 1]][0]]
+    : [...base].slice(0, 2);
+  return firstChars.join("").toUpperCase();
 }

@@ -90,11 +90,10 @@ export function getInitials(name?: string | null): string {
   if (!name || !name.trim()) return "?";
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "?";
-  if (parts.length === 1) {
-    return parts[0].slice(0, 1).toUpperCase();
-  }
-  const first = parts[0][0];
-  const last = parts[parts.length - 1][0];
+  // Spread (`[...str]`) iterates by Unicode code point, so emoji surrogate
+  // pairs (e.g. "😀") stay intact instead of splitting into lone surrogates.
+  const first = [...parts[0]][0];
+  const last = parts.length === 1 ? "" : [...parts[parts.length - 1]][0];
   return `${first}${last}`.toUpperCase();
 }
 

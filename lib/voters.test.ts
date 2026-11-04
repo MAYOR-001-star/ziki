@@ -95,6 +95,15 @@ describe("getInitials", () => {
     expect(getInitials(null)).toBe("?");
     expect(getInitials(undefined)).toBe("?");
   });
+
+  it("keeps emoji surrogate pairs intact (#2582)", () => {
+    // "😀" is a single code point made of two UTF-16 units (D83D DE00).
+    // Slicing by UTF-16 units returns a lone high surrogate (corrupted).
+    expect(getInitials("😀")).toBe("😀");
+    expect(getInitials("😀 Smith")).toBe("😀S");
+    expect(getInitials("Ada 😀")).toBe("A😀");
+    expect(getInitials("😀 😎")).toBe("😀😎");
+  });
 });
 
 describe("formatOverflowCount", () => {

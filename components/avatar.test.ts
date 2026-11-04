@@ -45,6 +45,14 @@ describe("Avatar (#290)", () => {
   it("copes with a missing name", () => {
     expect(html({ name: null })).toContain("?");
   });
+
+  it("keeps emoji surrogate pairs intact in initials (#2582)", () => {
+    // "😀" is a single code point made of two UTF-16 units (D83D DE00).
+    // Slicing by UTF-16 units returns a lone high surrogate (corrupted).
+    expect(html({ name: "😀" })).toContain("😀");
+    expect(html({ name: "😀 Smith" })).toContain("😀S");
+    expect(html({ name: "Ada 😀" })).toContain("A😀");
+  });
 });
 
 describe("where it's used", () => {
